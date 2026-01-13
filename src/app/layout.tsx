@@ -3,9 +3,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Charflix",
-  description: "Plataforma de streaming — projeto front-end com Next.js e TMDB",
+  description: "Projeto front-end de streaming — Next.js + Tailwind + TMDB",
 };
-
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

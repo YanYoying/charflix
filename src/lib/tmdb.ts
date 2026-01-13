@@ -191,12 +191,14 @@ export async function getHomeData(): Promise<HomeData> {
       { revalidate: 1800 }
     );
 
+    // top 10 (filmes)
     const top10 = await tmdbFetch<TMDBListResponse<TMDBMovieItem>>(
       "/movie/popular",
       { page: 1 },
       { revalidate: 3600 }
     );
 
+    // originais (séries) — usando discover com network da Netflix (213)
     const originals = await tmdbFetch<TMDBListResponse<TMDBTvItem>>(
       "/discover/tv",
       { with_networks: 213, sort_by: "popularity.desc", page: 1 },
@@ -225,6 +227,7 @@ export async function getHomeData(): Promise<HomeData> {
       ? mapListItem(billboardPick, billboardPick.media_type)
       : mockBillboard;
 
+    // rows
     const trendingMovies: Movie[] = trendingResults
       .filter((x) => x.media_type === "movie")
       .slice(0, 14)
@@ -238,19 +241,44 @@ export async function getHomeData(): Promise<HomeData> {
     return {
       billboard,
       rows: [
-        { id: "trending", title: "Em alta", items: [...trendingMovies, ...trendingTv].slice(0, 14) },
+        {
+          id: "trending",
+          title: "Em alta",
+          items: [...trendingMovies, ...trendingTv].slice(0, 14),
+        },
         {
           id: "top10",
           title: "Top 10 hoje",
           variant: "top10",
-          items: (top10.results || []).slice(0, 10).map((x) => mapListItem(x, "movie")),
+          items: (top10.results || [])
+            .slice(0, 10)
+            .map((x) => mapListItem(x, "movie")),
         },
-        { id: "originals", title: "Originais", items: (originals.results || []).slice(0, 14).map((x) => mapListItem(x, "tv")) },
-        { id: "action", title: "Ação", items: (action.results || []).slice(0, 14).map((x) => mapListItem(x, "movie")) },
-        { id: "comedy", title: "Comédias", items: (comedy.results || []).slice(0, 14).map((x) => mapListItem(x, "movie")) },
+        {
+          id: "originals",
+          title: "Originais",
+          items: (originals.results || [])
+            .slice(0, 14)
+            .map((x) => mapListItem(x, "tv")),
+        },
+        {
+          id: "action",
+          title: "Ação",
+          items: (action.results || [])
+            .slice(0, 14)
+            .map((x) => mapListItem(x, "movie")),
+        },
+        {
+          id: "comedy",
+          title: "Comédias",
+          items: (comedy.results || [])
+            .slice(0, 14)
+            .map((x) => mapListItem(x, "movie")),
+        },
       ],
     };
   } catch (err) {
+    // Fallback para não travar build/preview.
     console.warn("[TMDB] Falha ao carregar dados da home, usando mock.", err);
     return toHomeFallback();
   }

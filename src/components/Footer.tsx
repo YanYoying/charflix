@@ -24,8 +24,7 @@ export default function Footer() {
         </div>
 
         <p className="mt-8 text-xs text-zinc-600">
-          Charflix — projeto front-end de streaming inspirado em grandes plataformas.
-
+          Projeto educacional (front-end) inspirado em streaming UI. Não afiliado à Netflix.
         </p>
       </div>
     </footer>

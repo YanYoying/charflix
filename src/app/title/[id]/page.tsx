@@ -2,15 +2,19 @@ import Image from "next/image";
 import Link from "next/link";
 import { getTitleDetails } from "@/lib/tmdb";
 
+type Props = {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<{ type?: string }>;
+};
+
 export default async function TitlePage({
   params,
   searchParams,
-}: {
-  params: { id: string };
-  searchParams?: { type?: string };
-}) {
-  const type = (searchParams?.type === "tv" ? "tv" : "movie") as "movie" | "tv";
-  const title = await getTitleDetails(params.id, type);
+}: Props) {
+  const sp = (await searchParams) ?? {};
+  const { id } = await params;
+  const type = (sp.type === "tv" ? "tv" : "movie") as "movie" | "tv";
+  const title = await getTitleDetails(id, type);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
