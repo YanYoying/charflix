@@ -180,21 +180,23 @@ function toHomeFallback(): HomeData {
  */
 export async function getHomeData(): Promise<HomeData> {
   try {
-    // trending (mix de filmes/séries)
-    const trending = await tmdbFetch<TMDBListResponse<(TMDBMovieItem & { media_type?: string }) | (TMDBTvItem & { media_type?: string })>>(
+    // trending (mix de filmes/séries) — tipado (sem any)
+    type TMDBTrendingItem =
+      | (TMDBMovieItem & { media_type: "movie" })
+      | (TMDBTvItem & { media_type: "tv" });
+
+    const trending = await tmdbFetch<TMDBListResponse<TMDBTrendingItem>>(
       "/trending/all/week",
       { page: 1 },
       { revalidate: 1800 }
     );
 
-    // top 10 (filmes)
     const top10 = await tmdbFetch<TMDBListResponse<TMDBMovieItem>>(
       "/movie/popular",
       { page: 1 },
       { revalidate: 3600 }
     );
 
-    // originais (séries) — usando discover com network da Netflix (213)
     const originals = await tmdbFetch<TMDBListResponse<TMDBTvItem>>(
       "/discover/tv",
       { with_networks: 213, sort_by: "popularity.desc", page: 1 },
@@ -213,40 +215,47 @@ export async function getHomeData(): Promise<HomeData> {
       { revalidate: 3600 }
     );
 
+    const trendingResults = trending.results || [];
+
     // Billboard: primeiro item com backdrop
-    const billboardPick = (trending.results || []).find((x) => Boolean((x as any).backdrop_path)) ?? trending.results?.[0];
-    const billboardType = (billboardPick as any)?.media_type === "tv" ? "tv" : "movie";
+    const billboardPick =
+      trendingResults.find((x) => Boolean(x.backdrop_path)) ?? trendingResults[0];
+
     const billboard = billboardPick
-      ? mapListItem(billboardPick as any, billboardType)
+      ? mapListItem(billboardPick, billboardPick.media_type)
       : mockBillboard;
 
-    // rows
-    const trendingMovies: Movie[] = (trending.results || [])
-      .filter((x) => (x as any).media_type === "movie")
+    const trendingMovies: Movie[] = trendingResults
+      .filter((x) => x.media_type === "movie")
       .slice(0, 14)
-      .map((x) => mapListItem(x as any, "movie"));
+      .map((x) => mapListItem(x, "movie"));
 
-    const trendingTv: Movie[] = (trending.results || [])
-      .filter((x) => (x as any).media_type === "tv")
+    const trendingTv: Movie[] = trendingResults
+      .filter((x) => x.media_type === "tv")
       .slice(0, 14)
-      .map((x) => mapListItem(x as any, "tv"));
+      .map((x) => mapListItem(x, "tv"));
 
     return {
       billboard,
       rows: [
         { id: "trending", title: "Em alta", items: [...trendingMovies, ...trendingTv].slice(0, 14) },
-        { id: "top10", title: "Top 10 hoje", variant: "top10", items: (top10.results || []).slice(0, 10).map((x) => mapListItem(x, "movie")) },
+        {
+          id: "top10",
+          title: "Top 10 hoje",
+          variant: "top10",
+          items: (top10.results || []).slice(0, 10).map((x) => mapListItem(x, "movie")),
+        },
         { id: "originals", title: "Originais", items: (originals.results || []).slice(0, 14).map((x) => mapListItem(x, "tv")) },
         { id: "action", title: "Ação", items: (action.results || []).slice(0, 14).map((x) => mapListItem(x, "movie")) },
         { id: "comedy", title: "Comédias", items: (comedy.results || []).slice(0, 14).map((x) => mapListItem(x, "movie")) },
       ],
     };
   } catch (err) {
-    // Fallback para não travar build/preview.
     console.warn("[TMDB] Falha ao carregar dados da home, usando mock.", err);
     return toHomeFallback();
   }
 }
+
 
 /* =======================
    ✅ FUNÇÃO ÚNICA (SEM DUPLICAÇÃO)
