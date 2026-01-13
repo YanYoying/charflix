@@ -10,4 +10,5 @@ export type Movie = {
   posterUrl: string; // pode ser vazio
   mediaType?: "movie" | "tv";
   rating?: number; // 0-10
+  accent?: "red" | "blue" | "green" | "purple";
 };
